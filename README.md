@@ -89,6 +89,7 @@ timeout_seconds = 10
   - `@v4` updates only on major bumps.
   - `@v4.2` updates only on minor bumps in the same major.
   - `@v4.2.1` can update to any newer stable semver tag.
+- For `@v4` and `@v4.2`, the updater does not widen precision (`@v5` is valid, `@v5.0.2` is not; `@v4.3` is valid, `@v4.3.1` is not).
 - In `strict_mode = true`, ambiguous refs are skipped with log messages.
 - In `strict_mode = false`, non-semver refs can be rewritten to the latest eligible semver tag.
 

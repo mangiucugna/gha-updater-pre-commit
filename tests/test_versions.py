@@ -45,6 +45,18 @@ def test_select_update_ref_major_pin_ignores_minor_and_patch_updates() -> None:
     assert selection.reason == "already_latest"
 
 
+def test_select_update_ref_major_pin_ignores_higher_major_without_major_alias() -> None:
+    selection = select_update_ref(
+        current_ref="v5",
+        available_tags=["v6.0.2", "v7.3.1"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref is None
+    assert selection.reason == "already_latest"
+
+
 def test_select_update_ref_respects_minor_patch_scope() -> None:
     selection = select_update_ref(
         current_ref="v4.1",
@@ -68,15 +80,27 @@ def test_select_update_ref_minor_pin_ignores_patch_only_updates() -> None:
     assert selection.reason == "already_latest"
 
 
-def test_select_update_ref_minor_pin_updates_on_minor_bump() -> None:
+def test_select_update_ref_minor_pin_ignores_higher_minor_without_minor_alias() -> None:
     selection = select_update_ref(
         current_ref="v4.1",
-        available_tags=["v4.1.9", "v4.2.0", "v5.0"],
+        available_tags=["v4.2.3", "v4.3.1"],
         include_prereleases=False,
         update_scope="major",
     )
 
-    assert selection.new_ref == "v4.2.0"
+    assert selection.new_ref is None
+    assert selection.reason == "already_latest"
+
+
+def test_select_update_ref_minor_pin_updates_on_minor_bump() -> None:
+    selection = select_update_ref(
+        current_ref="v4.1",
+        available_tags=["v4.1.9", "v4.2", "v4.2.0", "v5.0"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref == "v4.2"
     assert selection.reason == "update_available"
 
 

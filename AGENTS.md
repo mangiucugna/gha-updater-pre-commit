@@ -6,7 +6,7 @@
 - Do not introduce a separate `.gha-updater.toml` file.
 - The published pre-commit hook must remain `id: gha-update`.
 - Hook behavior must scan all workflow files on each run via `always_run: true` and `pass_filenames: false`.
-- Update semantics must respect ref pinning precision: `vX` updates only on major bumps, `vX.Y` only on minor bumps within the same major, and `vX.Y.Z` can update to any newer stable semver tag.
+- Update semantics must respect ref pinning precision without widening: `vX` updates only to `vY` aliases (`Y>X`), `vX.Y` only to `vX.Z` aliases (`Z>Y`), and `vX.Y.Z` can update to any newer stable semver tag.
 - Default behavior should remain strict skip-and-log for ambiguous refs, with non-fatal handling for per-repo network/API failures.
 - For local-path pre-commit testing, `rev` must be a commit SHA (not `HEAD`) because pre-commit requires immutable refs.
 - Keep project pre-commit coverage aligned with `.pre-commit-config.yaml`: core file hygiene hooks, Ruff (`ruff-check --fix` and `ruff-format`), and `uv run python -m pytest`.

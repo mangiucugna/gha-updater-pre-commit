@@ -153,10 +153,14 @@ def _is_newer(candidate: TagInfo, current: TagInfo) -> bool:
 
 def _matches_pinning_policy(*, current: TagInfo, candidate: TagInfo) -> bool:
     if current.component_count == 1:
-        return candidate.normalized[0] > current.normalized[0]
+        return candidate.component_count == 1 and candidate.normalized[0] > current.normalized[0]
 
     if current.component_count == 2:
-        return candidate.normalized[0] == current.normalized[0] and candidate.normalized[1] > current.normalized[1]
+        return (
+            candidate.component_count == 2
+            and candidate.normalized[0] == current.normalized[0]
+            and candidate.normalized[1] > current.normalized[1]
+        )
 
     return True
 
