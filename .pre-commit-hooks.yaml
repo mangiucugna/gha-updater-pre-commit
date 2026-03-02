@@ -1,0 +1,7 @@
+- id: gha-update
+  name: gha-update
+  description: Update GitHub Action refs in workflow files to latest supported tags
+  entry: gha-actions-autoupdate
+  language: python
+  always_run: true
+  pass_filenames: false

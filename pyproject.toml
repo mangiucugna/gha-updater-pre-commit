@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gha-updater-pre-commit"
+version = "0.1.0"
+description = "Pre-commit hook that updates GitHub Action refs in workflow files"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  { name = "gha-updater-pre-commit" }
+]
+dependencies = [
+  "ruamel.yaml>=0.18,<0.19",
+  "tomli>=2,<3; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://github.com/mangiucugna/gha-updater-pre-commit"
+Repository = "https://github.com/mangiucugna/gha-updater-pre-commit"
+
+[project.scripts]
+gha-actions-autoupdate = "gha_update.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gha_update"]
