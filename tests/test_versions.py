@@ -24,13 +24,25 @@ def test_is_commit_sha_detects_sha_pins() -> None:
 def test_select_update_ref_allows_major_update() -> None:
     selection = select_update_ref(
         current_ref="v4",
-        available_tags=["v4", "v5", "v5.1.0"],
+        available_tags=["v4", "v5"],
         include_prereleases=False,
         update_scope="major",
     )
 
     assert selection.new_ref == "v5"
     assert selection.reason == "update_available"
+
+
+def test_select_update_ref_major_pin_ignores_minor_and_patch_updates() -> None:
+    selection = select_update_ref(
+        current_ref="v4",
+        available_tags=["v4.1.0", "v4.9.9"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref is None
+    assert selection.reason == "already_latest"
 
 
 def test_select_update_ref_respects_minor_patch_scope() -> None:
@@ -42,6 +54,30 @@ def test_select_update_ref_respects_minor_patch_scope() -> None:
     )
 
     assert selection.new_ref == "v4.2"
+
+
+def test_select_update_ref_minor_pin_ignores_patch_only_updates() -> None:
+    selection = select_update_ref(
+        current_ref="v4.1",
+        available_tags=["v4.1.1", "v4.1.9", "v5.0"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref is None
+    assert selection.reason == "already_latest"
+
+
+def test_select_update_ref_minor_pin_updates_on_minor_bump() -> None:
+    selection = select_update_ref(
+        current_ref="v4.1",
+        available_tags=["v4.1.9", "v4.2.0", "v5.0"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref == "v4.2.0"
+    assert selection.reason == "update_available"
 
 
 def test_select_update_ref_ignores_prereleases_by_default() -> None:
@@ -65,7 +101,7 @@ def test_select_latest_ref_includes_prerelease_when_enabled() -> None:
     assert selection.new_ref == "v5.0.0-rc.1"
 
 
-def test_select_update_ref_falls_back_when_granularity_missing() -> None:
+def test_select_update_ref_major_pin_does_not_fallback_to_patch_tag() -> None:
     selection = select_update_ref(
         current_ref="v4",
         available_tags=["v4.2.1"],
@@ -73,19 +109,32 @@ def test_select_update_ref_falls_back_when_granularity_missing() -> None:
         update_scope="major",
     )
 
-    assert selection.new_ref == "v4.2.1"
+    assert selection.new_ref is None
+    assert selection.reason == "already_latest"
 
 
-def test_select_update_ref_falls_back_when_same_granularity_is_not_newer() -> None:
+def test_select_update_ref_patch_pin_updates_on_any_newer_version() -> None:
     selection = select_update_ref(
-        current_ref="v4",
-        available_tags=["v4", "v4.2.1"],
+        current_ref="v4.1.1",
+        available_tags=["v4.1.2", "v4.2.0", "v5"],
         include_prereleases=False,
         update_scope="major",
     )
 
-    assert selection.new_ref == "v4.2.1"
+    assert selection.new_ref == "v5"
     assert selection.reason == "update_available"
+
+
+def test_select_update_ref_patch_pin_with_only_current_tag_is_already_latest() -> None:
+    selection = select_update_ref(
+        current_ref="v4.1.1",
+        available_tags=["v4.1.1"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref is None
+    assert selection.reason == "already_latest"
 
 
 def test_select_update_ref_returns_no_candidates_for_non_semver_tags() -> None:

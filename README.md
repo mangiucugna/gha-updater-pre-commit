@@ -85,11 +85,10 @@ timeout_seconds = 10
 
 - Only semver-like tags are considered (optional `v` prefix, up to `major.minor.patch`).
 - Stable tags are preferred; prereleases are ignored unless enabled.
-- Granularity is preserved when possible:
-  - `@v4` prefers major-style tags (`@v5` when available).
-  - `@v4.2` prefers minor-style tags.
-  - `@v4.2.1` prefers patch-style tags.
-- If no tag exists at the same granularity, the hook can fall back to highest stable semver tag.
+- Pinning is respected by default:
+  - `@v4` updates only on major bumps.
+  - `@v4.2` updates only on minor bumps in the same major.
+  - `@v4.2.1` can update to any newer stable semver tag.
 - In `strict_mode = true`, ambiguous refs are skipped with log messages.
 - In `strict_mode = false`, non-semver refs can be rewritten to the latest eligible semver tag.
 

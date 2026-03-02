@@ -79,11 +79,11 @@ def select_update_ref(
     if not eligible_tags:
         return VersionSelection(new_ref=None, reason="no_candidate_tags")
 
-    canonical_latest = _pick_highest(eligible_tags)
-    same_granularity_newer = [
-        tag for tag in eligible_tags if tag.component_count == current.component_count and _is_newer(tag, current)
-    ]
-    candidate = _pick_highest(same_granularity_newer) if same_granularity_newer else canonical_latest
+    pinning_candidates = [tag for tag in eligible_tags if _matches_pinning_policy(current=current, candidate=tag)]
+    if not pinning_candidates:
+        return VersionSelection(new_ref=None, reason="already_latest")
+
+    candidate = _pick_highest(pinning_candidates)
 
     if not _is_newer(candidate, current):
         return VersionSelection(new_ref=None, reason="already_latest")
@@ -149,6 +149,16 @@ def _pick_highest(tags: list[TagInfo]) -> TagInfo:
 
 def _is_newer(candidate: TagInfo, current: TagInfo) -> bool:
     return _version_sort_key(candidate) > _version_sort_key(current)
+
+
+def _matches_pinning_policy(*, current: TagInfo, candidate: TagInfo) -> bool:
+    if current.component_count == 1:
+        return candidate.normalized[0] > current.normalized[0]
+
+    if current.component_count == 2:
+        return candidate.normalized[0] == current.normalized[0] and candidate.normalized[1] > current.normalized[1]
+
+    return True
 
 
 def _version_sort_key(tag: TagInfo) -> tuple[tuple[int, int, int], int, str]:
