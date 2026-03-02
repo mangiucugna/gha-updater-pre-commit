@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from gha_update.cache import CacheError
+from gha_update.cache import CacheError, resolve_cache_path
 from gha_update.config import Config
 from gha_update.engine import EngineError, EngineOptions, _format_path, run_engine
 from gha_update.github_api import GitHubAPIError
@@ -303,7 +303,7 @@ jobs:
         tag_fetcher=fetcher,
     )
 
-    cache_path = git_repo / ".git" / "gha-updater-cache.json"
+    cache_path = resolve_cache_path(git_repo)
     cache_data = json.loads(cache_path.read_text(encoding="utf-8"))
     cache_data["repos"]["actions/checkout"]["fetched_at"] = 0
     cache_path.write_text(json.dumps(cache_data), encoding="utf-8")

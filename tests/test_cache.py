@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
-from gha_update.cache import CacheError, TagCache, _parse_cache_entry, _resolve_git_path, resolve_git_dir
+from gha_update.cache import TagCache, _parse_cache_entry, resolve_cache_path
 
 
 def test_tag_cache_save_noop_when_clean(tmp_path: Path) -> None:
@@ -57,72 +55,32 @@ def test_tag_cache_get_expires_by_ttl(tmp_path: Path) -> None:
     assert cache.get("actions/checkout", now=3601) is None
 
 
-def test_resolve_git_dir_from_directory(tmp_path: Path) -> None:
-    git_dir = tmp_path / ".git"
-    git_dir.mkdir()
-
-    resolved = resolve_git_dir(tmp_path)
-
-    assert resolved == git_dir.resolve()
-
-
-def test_resolve_git_dir_from_subdirectory(tmp_path: Path) -> None:
-    git_dir = tmp_path / ".git"
-    git_dir.mkdir()
+def test_resolve_cache_path_uses_repo_root_from_subdirectory(tmp_path: Path) -> None:
+    (tmp_path / ".git").mkdir()
     nested = tmp_path / "nested" / "path"
     nested.mkdir(parents=True)
 
-    resolved = resolve_git_dir(nested)
+    resolved = resolve_cache_path(nested)
+    expected = tmp_path / ".cache" / "gha-updater-pre-commit" / "tags.json"
 
-    assert resolved == git_dir.resolve()
-
-
-def test_resolve_git_dir_raises_when_missing(tmp_path: Path) -> None:
-    with pytest.raises(CacheError, match="Unable to locate"):
-        resolve_git_dir(tmp_path)
+    assert resolved == expected
 
 
-def test_resolve_git_dir_from_pointer_file(tmp_path: Path) -> None:
-    worktree_git_dir = tmp_path / "worktree-git"
-    worktree_git_dir.mkdir()
-    (tmp_path / ".git").write_text("gitdir: worktree-git\n", encoding="utf-8")
+def test_resolve_cache_path_uses_repo_root_when_git_is_pointer_file(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /tmp/worktree\n", encoding="utf-8")
+    nested = tmp_path / "nested" / "path"
+    nested.mkdir(parents=True)
 
-    resolved = resolve_git_dir(tmp_path)
+    resolved = resolve_cache_path(nested)
+    expected = tmp_path / ".cache" / "gha-updater-pre-commit" / "tags.json"
 
-    assert resolved == worktree_git_dir.resolve()
-
-
-def test_resolve_git_dir_pointer_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    pointer_path = tmp_path / ".git"
-
-    pointer_path.write_text("invalid", encoding="utf-8")
-    with pytest.raises(CacheError, match="Invalid .git pointer"):
-        resolve_git_dir(tmp_path)
-
-    pointer_path.write_text("gitdir:\n", encoding="utf-8")
-    with pytest.raises(CacheError, match="does not contain a gitdir"):
-        resolve_git_dir(tmp_path)
-
-    pointer_path.write_text("gitdir: nested/.git", encoding="utf-8")
-
-    original_read_text = Path.read_text
-
-    def raising_read_text(
-        self: Path,
-        encoding: str | None = None,
-        errors: str | None = None,
-    ) -> str:
-        if self == pointer_path:
-            raise OSError("boom")
-        return original_read_text(self, encoding=encoding, errors=errors)
-
-    monkeypatch.setattr(Path, "read_text", raising_read_text)
-    with pytest.raises(CacheError, match="Unable to read"):
-        resolve_git_dir(tmp_path)
+    assert resolved == expected
 
 
-def test_resolve_git_path_raises_for_non_file_non_dir(tmp_path: Path) -> None:
-    missing_path = tmp_path / "missing.git"
+def test_resolve_cache_path_falls_back_to_current_path_when_no_git_root(tmp_path: Path) -> None:
+    nested = tmp_path / "no" / "git" / "here"
+    nested.mkdir(parents=True)
 
-    with pytest.raises(CacheError, match="Unable to locate"):
-        _resolve_git_path(git_path=missing_path, git_owner_root=tmp_path)
+    resolved = resolve_cache_path(nested)
+    expected = nested / ".cache" / "gha-updater-pre-commit" / "tags.json"
+    assert resolved == expected

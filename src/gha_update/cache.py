@@ -7,7 +7,7 @@ from typing import Any
 
 from gha_update.models import CacheEntry
 
-_CACHE_FILENAME = "gha-updater-cache.json"
+_CACHE_DIRNAME = "gha-updater-pre-commit"
 _CACHE_VERSION = 1
 _MISSING = object()
 
@@ -25,8 +25,7 @@ class TagCache:
 
     @classmethod
     def from_repo_root(cls, repo_root: Path, ttl_hours: int) -> TagCache:
-        git_dir = resolve_git_dir(repo_root)
-        cache_path = git_dir / _CACHE_FILENAME
+        cache_path = resolve_cache_path(repo_root)
         return cls(path=cache_path, ttl_hours=ttl_hours)
 
     @property
@@ -97,42 +96,17 @@ class TagCache:
         return entries
 
 
-def resolve_git_dir(repo_root: Path) -> Path:
-    start_path = repo_root.resolve()
-    for candidate_root in (start_path, *start_path.parents):
-        git_path = candidate_root / ".git"
-        if not git_path.exists():
-            continue
-        return _resolve_git_path(git_path=git_path, git_owner_root=candidate_root)
-
-    raise CacheError("Unable to locate .git directory for cache storage")
+def resolve_cache_path(repo_root: Path) -> Path:
+    cache_repo_root = _resolve_cache_repo_root(repo_root)
+    return cache_repo_root / ".cache" / _CACHE_DIRNAME / "tags.json"
 
 
-def _resolve_git_path(*, git_path: Path, git_owner_root: Path) -> Path:
-    if git_path.is_dir():
-        return git_path.resolve()
-
-    if not git_path.is_file():
-        raise CacheError("Unable to locate .git directory for cache storage")
-
-    try:
-        git_pointer = git_path.read_text(encoding="utf-8").strip()
-    except OSError as exc:
-        raise CacheError("Unable to read .git pointer file") from exc
-
-    prefix = "gitdir:"
-    if not git_pointer.lower().startswith(prefix):
-        raise CacheError("Invalid .git pointer file format")
-
-    git_dir_text = git_pointer[len(prefix) :].strip()
-    if not git_dir_text:
-        raise CacheError(".git pointer file does not contain a gitdir path")
-
-    git_dir_path = Path(git_dir_text)
-    if not git_dir_path.is_absolute():
-        git_dir_path = (git_owner_root / git_dir_path).resolve()
-
-    return git_dir_path
+def _resolve_cache_repo_root(start_path: Path) -> Path:
+    resolved_start = start_path.resolve()
+    for candidate_root in (resolved_start, *resolved_start.parents):
+        if (candidate_root / ".git").exists():
+            return candidate_root
+    return resolved_start
 
 
 def _parse_cache_entry(raw_value: Any) -> CacheEntry | None:

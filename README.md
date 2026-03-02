@@ -114,7 +114,7 @@ gha-actions-autoupdate --check
 
 ## Cache
 
-- Cache path: `.git/gha-updater-cache.json`
+- Cache path: `<repo-root>/.cache/gha-updater-pre-commit/tags.json`
 - Key: `owner/repo`
 - Cache writes only after successful tag fetch.
 - To bypass cache:
