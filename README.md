@@ -54,9 +54,9 @@ Hook definition:
 
 That means every commit run scans all workflow files, not just staged file arguments.
 
-## Configuration (`pyproject.toml`)
+## How to override configuration defaults in `pyproject.toml`
 
-Consumers configure behavior in their own repository `pyproject.toml`:
+Consumers can configure behavior in their own repository `pyproject.toml`:
 
 ```toml
 [tool.gha_update]
