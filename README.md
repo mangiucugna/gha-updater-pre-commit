@@ -157,6 +157,19 @@ Common skip reasons:
 
 If configuration is invalid, the hook exits `2` and prints the specific key/type issue.
 
+## Community and Support
+
+- Support questions and troubleshooting: [GitHub Discussions](https://github.com/mangiucugna/gha-updater-pre-commit/discussions)
+- Bug reports and feature requests: GitHub Issues (use templates)
+- Security vulnerabilities: private reporting in the Security tab
+
+Additional project policies:
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Support guide](SUPPORT.md)
+
 ## Development
 
 Install locally:

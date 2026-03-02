@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible problem with the updater behavior.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please provide enough detail to reproduce the issue.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I can reproduce this issue with the latest release.
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: What happened and why is it a bug?
+      placeholder: The hook updated/failed/skipped in an unexpected way...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Provide exact steps and sample workflow snippet if relevant.
+      placeholder: |
+        1. Configure ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and logs
+      description: Include relevant output from `gha-actions-autoupdate --verbose`.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant `pyproject.toml` configuration
+      description: Include your `[tool.gha_update]` section if present.
+      render: toml
+  - type: input
+    id: versions
+    attributes:
+      label: Environment
+      description: Include Python version, OS, and pre-commit version.
+      placeholder: "Python 3.12, macOS 14, pre-commit 4.3.0"
+    validations:
+      required: true
