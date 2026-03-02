@@ -9,8 +9,6 @@ def discover_workflow_files(repo_root: Path) -> list[Path]:
         return []
 
     workflow_files = [
-        path
-        for path in workflows_dir.iterdir()
-        if path.is_file() and path.suffix.lower() in {".yml", ".yaml"}
+        path for path in workflows_dir.iterdir() if path.is_file() and path.suffix.lower() in {".yml", ".yaml"}
     ]
     return sorted(workflow_files)

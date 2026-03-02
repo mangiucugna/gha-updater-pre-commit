@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
-
+from dataclasses import dataclass
 
 _REPO_PART_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
 

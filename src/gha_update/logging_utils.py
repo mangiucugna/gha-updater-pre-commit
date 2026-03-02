@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-
 LOGGER_NAME = "gha_update"
 
 

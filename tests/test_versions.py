@@ -74,3 +74,37 @@ def test_select_update_ref_falls_back_when_granularity_missing() -> None:
     )
 
     assert selection.new_ref == "v4.2.1"
+
+
+def test_select_update_ref_falls_back_when_same_granularity_is_not_newer() -> None:
+    selection = select_update_ref(
+        current_ref="v4",
+        available_tags=["v4", "v4.2.1"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref == "v4.2.1"
+    assert selection.reason == "update_available"
+
+
+def test_select_update_ref_returns_no_candidates_for_non_semver_tags() -> None:
+    selection = select_update_ref(
+        current_ref="v1",
+        available_tags=["not-a-tag"],
+        include_prereleases=False,
+        update_scope="major",
+    )
+
+    assert selection.new_ref is None
+    assert selection.reason == "no_candidate_tags"
+
+
+def test_select_latest_ref_returns_no_candidates_when_empty() -> None:
+    selection = select_latest_ref(
+        available_tags=[],
+        include_prereleases=False,
+    )
+
+    assert selection.new_ref is None
+    assert selection.reason == "no_candidate_tags"

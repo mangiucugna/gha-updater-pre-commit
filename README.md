@@ -1,8 +1,10 @@
-# gha-updater-pre-commit
+# gha-updater-pre-commit: GitHub Actions Updater Pre-Commit Hook
 
-`gha-update` is a pre-commit hook that updates GitHub Action refs in workflow files.
+`gha-update` is a Python pre-commit hook to automatically update GitHub Actions versions in workflow YAML files.
 
-## What It Does
+It scans `.github/workflows/*.yml` and `.yaml`, checks GitHub for newer action tags, and rewrites outdated `uses:` refs like `actions/checkout@v4` while preserving your workflow formatting.
+
+## What This GitHub Actions Updater Does
 
 - Scans all workflow files under `.github/workflows/` on every run.
 - Finds `uses:` entries that reference GitHub actions (`owner/repo@ref` and `owner/repo/path@ref`).

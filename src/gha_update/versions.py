@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
-from typing import Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
 
 from gha_update.models import TagInfo
-
 
 _SHA_PATTERN = re.compile(r"^[0-9a-fA-F]{40}$")
 _SEMVER_PATTERN = re.compile(
@@ -81,10 +80,10 @@ def select_update_ref(
         return VersionSelection(new_ref=None, reason="no_candidate_tags")
 
     canonical_latest = _pick_highest(eligible_tags)
-    same_granularity = [
-        tag for tag in eligible_tags if tag.component_count == current.component_count
+    same_granularity_newer = [
+        tag for tag in eligible_tags if tag.component_count == current.component_count and _is_newer(tag, current)
     ]
-    candidate = _pick_highest(same_granularity) if same_granularity else canonical_latest
+    candidate = _pick_highest(same_granularity_newer) if same_granularity_newer else canonical_latest
 
     if not _is_newer(candidate, current):
         return VersionSelection(new_ref=None, reason="already_latest")

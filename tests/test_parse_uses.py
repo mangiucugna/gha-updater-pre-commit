@@ -13,13 +13,13 @@ def test_parse_standard_action_reference() -> None:
 
 
 def test_parse_reusable_workflow_subpath() -> None:
-    parsed, reason = parse_uses_value(
-        "acme/ci/.github/workflows/reusable.yml@v2"
-    )
+    parsed, reason = parse_uses_value("acme/ci/.github/workflows/reusable.yml@v2")
 
     assert reason is None
     assert parsed is not None
     assert parsed.subpath == ".github/workflows/reusable.yml"
+    assert parsed.repo_key == "acme/ci"
+    assert parsed.with_ref("v3") == "acme/ci/.github/workflows/reusable.yml@v3"
 
 
 def test_skip_local_action() -> None:
@@ -41,3 +41,19 @@ def test_skip_expression_reference() -> None:
 
     assert parsed is None
     assert reason == "expression_reference"
+
+
+def test_parse_malformed_variants() -> None:
+    malformed_values = [
+        "actions",
+        "actions/checkout@",
+        "actions@v1",
+        "owner!bad/repo@v1",
+        "owner/repo!bad@v1",
+        "owner/repo//path@v1",
+    ]
+
+    for value in malformed_values:
+        parsed, reason = parse_uses_value(value)
+        assert parsed is None
+        assert reason == "malformed_uses"

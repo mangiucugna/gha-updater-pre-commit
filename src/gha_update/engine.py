@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
@@ -13,7 +13,11 @@ from gha_update.logging_utils import log_skip, log_update, log_warning
 from gha_update.models import ActionRef, Decision, EngineResult
 from gha_update.parse_uses import parse_uses_value
 from gha_update.versions import VersionSelection, select_latest_ref, select_update_ref
-from gha_update.yaml_edit import iter_uses_nodes, load_workflow_yaml, write_workflow_yaml
+from gha_update.yaml_edit import (
+    iter_uses_nodes,
+    load_workflow_yaml,
+    write_workflow_yaml,
+)
 
 
 class EngineError(Exception):
@@ -21,8 +25,7 @@ class EngineError(Exception):
 
 
 class TagFetcher(Protocol):
-    def fetch_tags(self, owner: str, repo: str) -> list[str]:
-        ...
+    def fetch_tags(self, owner: str, repo: str) -> list[str]: ...
 
 
 @dataclass(frozen=True)
@@ -73,19 +76,12 @@ def run_engine(
             if action is None:
                 reason = skip_reason or "unknown_skip"
                 skipped_count += 1
-                decisions.append(
-                    Decision(
-                        status="skipped",
-                        reason=reason,
-                        file_path=workflow_path,
-                        action=uses_value,
-                        current_ref="",
-                    )
-                )
-                log_skip(
-                    logger,
+                _record_parse_skip(
+                    decisions=decisions,
+                    workflow_path=workflow_path,
                     action=uses_value,
                     reason=reason,
+                    logger=logger,
                     verbose=options.verbose,
                 )
                 continue
@@ -123,14 +119,10 @@ def run_engine(
             )
             if tags is None:
                 error_count += 1
-                decisions.append(
-                    Decision(
-                        status="error",
-                        reason="failed_to_fetch_tags",
-                        file_path=workflow_path,
-                        action=action_ref.raw_uses,
-                        current_ref=action_ref.ref,
-                    )
+                _record_fetch_error(
+                    decisions=decisions,
+                    workflow_path=workflow_path,
+                    action_ref=action_ref,
                 )
                 continue
 
@@ -140,11 +132,7 @@ def run_engine(
                 include_prereleases=config.include_prereleases,
                 update_scope=config.update_scope,
             )
-            if (
-                selection.new_ref is None
-                and selection.reason == "current_ref_not_semver"
-                and not config.strict_mode
-            ):
+            if selection.new_ref is None and selection.reason == "current_ref_not_semver" and not config.strict_mode:
                 selection = select_latest_ref(
                     available_tags=tags,
                     include_prereleases=config.include_prereleases,
@@ -258,6 +246,44 @@ def _get_tags_for_repo(
     cache.set(repo_key, list(fetched_tags))
     tags_by_repo[repo_key] = fetched_tags
     return fetched_tags
+
+
+def _record_parse_skip(
+    *,
+    decisions: list[Decision],
+    workflow_path: Path,
+    action: str,
+    reason: str,
+    logger: logging.Logger,
+    verbose: bool,
+) -> None:
+    decisions.append(
+        Decision(
+            status="skipped",
+            reason=reason,
+            file_path=workflow_path,
+            action=action,
+            current_ref="",
+        )
+    )
+    log_skip(logger, action=action, reason=reason, verbose=verbose)
+
+
+def _record_fetch_error(
+    *,
+    decisions: list[Decision],
+    workflow_path: Path,
+    action_ref: ActionRef,
+) -> None:
+    decisions.append(
+        Decision(
+            status="error",
+            reason="failed_to_fetch_tags",
+            file_path=workflow_path,
+            action=action_ref.raw_uses,
+            current_ref=action_ref.ref,
+        )
+    )
 
 
 def _record_non_update_decision(

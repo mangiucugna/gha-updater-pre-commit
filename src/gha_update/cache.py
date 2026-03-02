@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
-import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 from gha_update.models import CacheEntry
-
 
 _CACHE_FILENAME = "gha-updater-cache.json"
 _CACHE_VERSION = 1
@@ -26,7 +24,7 @@ class TagCache:
         self._dirty = False
 
     @classmethod
-    def from_repo_root(cls, repo_root: Path, ttl_hours: int) -> "TagCache":
+    def from_repo_root(cls, repo_root: Path, ttl_hours: int) -> TagCache:
         git_dir = resolve_git_dir(repo_root)
         cache_path = git_dir / _CACHE_FILENAME
         return cls(path=cache_path, ttl_hours=ttl_hours)
@@ -37,8 +35,8 @@ class TagCache:
 
     def get(self, repo_key: str, *, now: float | None = None) -> tuple[str, ...] | None:
         current_time = time.time() if now is None else now
-        entry = self._entries.get(repo_key, _MISSING)
-        if entry is _MISSING:
+        entry = self._entries.get(repo_key)
+        if entry is None:
             return None
 
         age_hours = (current_time - entry.fetched_at) / 3600
@@ -100,24 +98,39 @@ class TagCache:
 
 
 def resolve_git_dir(repo_root: Path) -> Path:
-    try:
-        completed = subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            check=True,
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-        )
-    except (subprocess.CalledProcessError, OSError) as exc:
-        raise CacheError("Unable to locate .git directory for cache storage") from exc
+    start_path = repo_root.resolve()
+    for candidate_root in (start_path, *start_path.parents):
+        git_path = candidate_root / ".git"
+        if not git_path.exists():
+            continue
+        return _resolve_git_path(git_path=git_path, git_owner_root=candidate_root)
 
-    git_dir_text = completed.stdout.strip()
+    raise CacheError("Unable to locate .git directory for cache storage")
+
+
+def _resolve_git_path(*, git_path: Path, git_owner_root: Path) -> Path:
+    if git_path.is_dir():
+        return git_path.resolve()
+
+    if not git_path.is_file():
+        raise CacheError("Unable to locate .git directory for cache storage")
+
+    try:
+        git_pointer = git_path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise CacheError("Unable to read .git pointer file") from exc
+
+    prefix = "gitdir:"
+    if not git_pointer.lower().startswith(prefix):
+        raise CacheError("Invalid .git pointer file format")
+
+    git_dir_text = git_pointer[len(prefix) :].strip()
     if not git_dir_text:
-        raise CacheError("git rev-parse --git-dir returned an empty path")
+        raise CacheError(".git pointer file does not contain a gitdir path")
 
     git_dir_path = Path(git_dir_text)
     if not git_dir_path.is_absolute():
-        git_dir_path = (repo_root / git_dir_path).resolve()
+        git_dir_path = (git_owner_root / git_dir_path).resolve()
 
     return git_dir_path
 

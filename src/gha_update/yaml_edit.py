@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, MutableMapping
 from pathlib import Path
-from typing import Any, MutableMapping
+from typing import Any
 
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -23,7 +23,9 @@ def write_workflow_yaml(path: Path, data: Any) -> None:
         yaml.dump(data, handle)
 
 
-def iter_uses_nodes(node: Any) -> Generator[tuple[MutableMapping[str, Any], str, str], None, None]:
+def iter_uses_nodes(
+    node: Any,
+) -> Generator[tuple[MutableMapping[str, Any], str, str]]:
     if isinstance(node, CommentedMap):
         for key, value in node.items():
             if key == "uses" and isinstance(value, str):

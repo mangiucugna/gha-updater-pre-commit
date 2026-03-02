@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+import importlib
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import Any
 
 try:
-    import tomllib  # type: ignore[attr-defined]
+    tomllib_module = importlib.import_module("tomllib")
 except ModuleNotFoundError:  # pragma: no cover - py3.10 fallback
-    import tomli as tomllib  # type: ignore[no-redef]
-
+    tomllib_module = importlib.import_module("tomli")
 
 _ALLOWED_KEYS = {
     "ttl_hours",
@@ -48,8 +48,8 @@ def load_config(repo_root: Path) -> Config:
         return Config()
 
     try:
-        raw = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raw = tomllib_module.loads(pyproject_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
         raise ConfigError(f"Failed to read pyproject.toml: {exc}") from exc
 
     tool_table = _expect_mapping(raw.get("tool"), "[tool]")
@@ -145,9 +145,7 @@ def _read_repo_key_list(section: dict[str, Any], key: str, default: tuple[str, .
             raise ConfigError(f"[tool.gha_update].{key} must contain only strings")
         repo_key = item.strip().lower()
         if not _REPO_KEY_PATTERN.fullmatch(repo_key):
-            raise ConfigError(
-                f"[tool.gha_update].{key} contains invalid owner/repo value: {item}"
-            )
+            raise ConfigError(f"[tool.gha_update].{key} contains invalid owner/repo value: {item}")
         normalized.append(repo_key)
 
     return tuple(normalized)
